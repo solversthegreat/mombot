@@ -1,7 +1,5 @@
 from sys import prefix
 import nlpcloud
-from fastapi import FastAPI
-import nlpcloud
 from fastapi import APIRouter,HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse 
