@@ -71,8 +71,8 @@ public class RocketAdapterQueueEndpoint {
 	@Autowired
 	private HtmlEmailBuilder emailBuilder;
 	
-	//@Autowired
-	//private JavaMailSender mailSender;
+	@Autowired
+	private JavaMailSender mailSender;
 	
 	private RestTemplate template;
 	
@@ -139,7 +139,7 @@ public class RocketAdapterQueueEndpoint {
 			Map<String, String> params = new HashMap<>();
 			params.put("room", "dailystandup");
 			
-			response = template.exchange(
+			response = restTemplate.exchange(
 					AllUrls.ROCKET_CHAT_PARTICIPANTS_ENDPOINT, 
 					HttpMethod.GET, 
 					request, 
@@ -274,47 +274,34 @@ public class RocketAdapterQueueEndpoint {
 		}
 		
 	}
-
-	/*
-	 * private HttpEntity<Response> sendGenericEmail(Result result, String userId) {
-	 * 
-	 * Map<String, String> pm = result.getParameters(); String emailSubject =
-	 * pm.get("emailsubject"); String emailTemplate = pm.get("emailtemplatename");
-	 * String toEmail = pm.get("emailid");
-	 * 
-	 * Context c = new Context(); for(String p : pm.keySet()) { c.setVariable(p,
-	 * pm.get(p)); }
-	 * 
-	 * DialogFlowFulfillmentResponse r = new DialogFlowFulfillmentResponse();
-	 * DffUserData udata = new DffUserData();
-	 * 
-	 * String msg = send(emailSubject, toEmail, emailTemplate, userId, c);
-	 * udata.setUserData(msg); r.setData(udata); r.setDisplayText(msg);
-	 * r.setSpeech(msg);
-	 * 
-	 * return new HttpEntity<DialogFlowFulfillmentResponse>(r,
-	 * getHeadersCommanForAll()); }
-	 * 
-	 * private String send(String subject, String toEmail, String templateName,
-	 * String userId, Context context) {
-	 * 
-	 * try { MimeMessage mail = mailSender.createMimeMessage(); MimeMessageHelper
-	 * messageHelper = new MimeMessageHelper(mail, true);
-	 * messageHelper.setFrom("Credit Suisse Team<grt.goblin@gmail.com>");
-	 * messageHelper.setTo(toEmail); messageHelper.setSubject(subject);
-	 * messageHelper.setText(emailBuilder.build(templateName, context), true);
-	 * mailSender.send(mail);
-	 * 
-	 * if(userId != null) { USER_EMAIL_ID_STORE.put(userId, toEmail); } return
-	 * "Email sent successfully";
-	 * 
-	 * } catch(Exception e) { logger.error("Error sending email :"+e); }
-	 * 
-	 * return
-	 * "Sorry. Couldn't send the email right now. I will try again back after sometime."
-	 * ; }
-	 * 
-	 * private HttpEntity<DialogFlowFulfillmentResponse> createInc(DffUserData data,
+	
+	private String send(String subject, String toEmail, String templateName, String userId) {
+		
+		try {
+			MimeMessage mail = mailSender.createMimeMessage();	
+            MimeMessageHelper messageHelper = new MimeMessageHelper(mail, true);
+	        messageHelper.setFrom("Credit Suisse Team<solversthegreat@gmail.com>");
+	        messageHelper.setTo(toEmail);
+	        messageHelper.setSubject(subject);
+	        Context context = new Context();
+	        // need to populate context for replacing placeholder with value in template
+	        messageHelper.setText(emailBuilder.build(templateName, context), true);
+		    mailSender.send(mail);
+		    
+		    if(userId != null) {
+		    	USER_EMAIL_ID_STORE.put(userId, toEmail);
+		    }
+		    return "Email sent successfully";
+		    
+		} catch(Exception e) {
+			logger.error("Error sending email :"+e);
+		}
+		
+		return "Sorry. Couldn't send the email right now. I will try again back after sometime.";
+	}
+	  
+	 
+	 /* private HttpEntity<DialogFlowFulfillmentResponse> createInc(DffUserData data,
 	 * Result result, String userId, DialogFlowQueryResponse webhookInput) {
 	 * 
 	 * Map<String, String> pm = result.getParameters(); String incTitle =
