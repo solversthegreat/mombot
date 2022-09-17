@@ -17,7 +17,3 @@ management:
   security:
     enabled: false
     
-logging:
-  level:
-    com.netflix.discovery: 'OFF'
-    org.netflix.eurika: 'OFF'

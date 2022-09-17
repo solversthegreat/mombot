@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: rocket-chat
+  mail:
+    default-encoding: 
+    host: smtp.gmail.com
+    username: solversthegreat@gmail.com
+    password: hack@2022
+    port: 587
+    properties:
+      mail:
+        smtp:
+          ssl:
+            trust: "smtp.gmail.com"
+          auth: true
+          starttls:
+            enable: true
+    protocol: smtp
+    test-connection: false

@@ -2,17 +2,17 @@ package com.code.solvers.model;
 
 import java.io.Serializable;
 
-//import com.code.pilots.dialogflow.model.response.DialogFlowOriginalRequest;
-//import com.code.pilots.dialogflow.model.response.DialogFlowQueryResponse;
+import com.code.solvers.nlp.model.OriginalRequest;
+import com.code.solvers.nlp.model.Response;
 import com.code.solvers.model.rocket.RocketIncomingMessage;
 // as per dialogflow contract
 public class BotServerIncomingMessage implements Serializable {
 
 	private static final long serialVersionUID = 1L; 
 	
-	//private DialogFlowOriginalRequest originalRequest;
+	private OriginalRequest originalRequest;
 	private RocketIncomingMessage rocketIncomingMessage;
-	//private DialogFlowQueryResponse lastResponse;
+	private Response lastResponse;
 	private String sessionId;
 	
 	public RocketIncomingMessage getRocketIncomingMessage() {
@@ -29,12 +29,13 @@ public class BotServerIncomingMessage implements Serializable {
 				+ rocketIncomingMessage + "]";
 	}
 
-	/*
-	 * public DialogFlowQueryResponse getLastResponse() { return lastResponse; }
-	 * 
-	 * public void setLastResponse(DialogFlowQueryResponse lastResponse) {
-	 * this.lastResponse = lastResponse; }
-	 */
+	
+	public Response getLastResponse() { return lastResponse; }
+	  
+	public void setLastResponse(Response lastResponse) {
+		this.lastResponse = lastResponse; 
+	}
+	 
 
 	public String getSessionId() {
 		return sessionId;
@@ -44,12 +45,13 @@ public class BotServerIncomingMessage implements Serializable {
 		this.sessionId = sessionId;
 	}
 
-	/*
-	 * public DialogFlowOriginalRequest getOriginalRequest() { return
-	 * originalRequest; }
-	 * 
-	 * public void setOriginalRequest(DialogFlowOriginalRequest originalRequest) {
-	 * this.originalRequest = originalRequest; }
-	 */
 	
+	public OriginalRequest getOriginalRequest() { 
+	  return originalRequest; 
+	}
+  
+	public void setOriginalRequest(OriginalRequest originalRequest) {
+	  this.originalRequest = originalRequest; 
+	}
+	 
 }
