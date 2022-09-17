@@ -1,5 +1,6 @@
 package com.code.solvers.starter;
 
+import java.time.Duration;
 import java.util.Base64;
 
 import org.apache.log4j.Logger;
@@ -24,7 +25,8 @@ public class JiraConnector {
 
 	@Autowired
 	public JiraConnector(RestTemplateBuilder rtb) {
-		restTemplate = rtb.setConnectTimeout(AllUrls.TIMEOUT_IN_MILLISECOND).setReadTimeout(AllUrls.TIMEOUT_IN_MILLISECOND).build();
+		restTemplate = rtb.setConnectTimeout(Duration.ofMillis(AllUrls.TIMEOUT_IN_MILLISECOND))
+				.setReadTimeout(Duration.ofMillis(AllUrls.TIMEOUT_IN_MILLISECOND)).build();
 	}
 
 	public HttpEntity<JiraResponseMessage> processJiraRequest(JiraRequestMessage message) {
@@ -50,17 +52,13 @@ public class JiraConnector {
 	private HttpHeaders getHeaders() {
 
 		HttpHeaders headers = new HttpHeaders();
-		headers.add("Authorization", "Basic " + getAuthorization());
+		headers.add("Authorization", "Bearer " + getToken());
 		headers.setContentType(MediaType.APPLICATION_JSON);
 
 		return headers;
 	}
 	
-	private String getAuthorization() {
-		String auth = "";
-		String authString = "grt.goblin@gmail.com:Indi@#123";//+ "yTMUWblaQN2KU60sddny519A";
-		auth = Base64.getEncoder().encodeToString(authString.getBytes());
-		
-		return auth;
+	private String getToken() {
+		return "Tov2tU7rHXMENF1XVnkY39F4";
 	}
 }

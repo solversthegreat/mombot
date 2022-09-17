@@ -1,14 +1,12 @@
-package com.code.solvers.main;
+package com.code.solvers;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 
-import com.code.solvers.rest.JiraEndpoint;
-import com.code.solvers.starter.JiraConnector;
 
 @SpringBootApplication
-@ComponentScan(basePackageClasses={JiraEndpoint.class, JiraConnector.class})
+@EnableEurekaClient
 public class JiraSpringBootApp {
 	
 	public static void main(String[] args) {

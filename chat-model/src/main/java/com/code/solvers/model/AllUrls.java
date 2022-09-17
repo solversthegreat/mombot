@@ -14,7 +14,7 @@ public class AllUrls {
 	public static final String DIALOGFLOW_QUERY_ENDPOINT = "https://api.dialogflow.com/v1/query?v=20170712";
 	public static String BOT_SERVER_TO_ROCKET_PUSH = "http://rocket-chat/rocket/adapter/outgoing/push";
 	public static String BOT_SERVER_TO_DIALOG_FLOW = "http://dialogflow-connector/dialogflow/connector/incoming/push";
-	public static String JIRA_CREATE_ISSUE_ENDPOINT = "https://greatgoblin.atlassian.net/rest/api/2/issue";
+	public static String JIRA_CREATE_ISSUE_ENDPOINT = "https://thegreatsolvers.atlassian.net/rest/api/3/issue";
 	public static String JIRA_LOCAL_CREATE_ISSUE_ENDPOINT = "http://jira-connector/jira/connector/incident";
 	public static String ROCKET_TO_TWILIO_SMS = "http://twilio-connector/twilio/adapter/incoming/otp/sms";
 	public static String ROCKET_TO_TWILIO_CALL = "http://twilio-connector/twilio/adapter/incoming/otp/call";

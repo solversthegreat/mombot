@@ -206,6 +206,20 @@ public class RocketAdapterQueueEndpoint {
 		return response;
 	}
 	
+	@RequestMapping(value = "/rocket/adapter/jira", method = RequestMethod.GET)
+	public ResponseEntity<JiraResponseMessage> createJiraIncident() {
+		logger.info("Request received to create JIRA incident.");
+		ResponseEntity<JiraResponseMessage> response = null;
+		try {
+			createJira("Demo tile", "Testing JIRA creation");
+			
+		} catch(Exception e) {
+			logger.error("Error while creating JIRA incident.");
+		}
+		
+		return response;
+	}
+	
 	private HttpEntity<RocketChatPostMessage> getRequest(BotServerOutgoingMessage message){
 		RocketIncomingMessage inMessage = message.getIncomingMessage().getRocketIncomingMessage();
         HttpHeaders headers = getHeaders();
@@ -299,6 +313,41 @@ public class RocketAdapterQueueEndpoint {
 		
 		return "Sorry. Couldn't send the email right now. I will try again back after sometime.";
 	}
+	
+	private HttpEntity<JiraResponseMessage> createJira(String title, String desc) {
+		JiraRequestMessage jiraMessage = new JiraRequestMessage();
+		
+		Issuetype it = new Issuetype();
+		it.setName("Task");
+		
+		Project p = new Project();
+		p.setKey("FIRST");
+		
+		Fields f = new Fields();
+		f.setProject(p);
+		f.setIssuetype(it);
+		f.setSummary(title);
+		f.setDescription(desc);
+		Assignee a = new Assignee();
+		a.setName("admin");
+		
+		jiraMessage.setFields(f);
+		
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+
+		HttpEntity<JiraRequestMessage> httpReq = new HttpEntity<JiraRequestMessage>(jiraMessage, headers);
+		
+		try {
+			HttpEntity<JiraResponseMessage> resp = restTemplate.postForEntity(AllUrls.JIRA_LOCAL_CREATE_ISSUE_ENDPOINT, httpReq, JiraResponseMessage.class);
+			return resp;
+			
+		} catch(Exception e) {
+			logger.error("Error creating jira :", e);
+		}
+		
+		return new HttpEntity<JiraResponseMessage>(new JiraResponseMessage());
+	}
 	  
 	 
 	 /* private HttpEntity<DialogFlowFulfillmentResponse> createInc(DffUserData data,
@@ -316,7 +365,7 @@ public class RocketAdapterQueueEndpoint {
 	 * 
 	 * if(jiraResp.getBody() != null) { String jiraKey =
 	 * jiraResp.getBody().getKey(); if(jiraKey != null) { link =
-	 * "https://greatgoblin.atlassian.net/browse/"+jiraResp.getBody().getKey(); msg
+	 * "https://thegreatsolvers.atlassian.net/browse/"+jiraResp.getBody().getKey(); msg
 	 * = "A Ticket for you has been created. Here is the link \n. "
 	 * +link+"\n. Please quote this ticket number for any communication regarding this discussion."
 	 * ; Context c = new Context(); c.setVariable("inckey", jiraKey);
@@ -379,37 +428,7 @@ public class RocketAdapterQueueEndpoint {
 	 * gc.setMembers(groupChatUses);
 	 * 
 	 * return new HttpEntity<GroupCreate>(gc, headers); }
-	 * 
-	 * private HttpEntity<JiraResponseMessage> createJira(String incTitle, String
-	 * incDescription) { JiraRequestMessage jiraMessage = new JiraRequestMessage();
-	 * 
-	 * Issuetype it = new Issuetype(); it.setName("Task");
-	 * 
-	 * Project p = new Project(); p.setKey("INCBOTREQ");
-	 * 
-	 * Fields f = new Fields(); f.setProject(p); f.setIssuetype(it);
-	 * f.setSummary(incTitle); f.setDescription(incDescription); Assignee a = new
-	 * Assignee(); a.setName("admin");
-	 * 
-	 * jiraMessage.setFields(f);
-	 * 
-	 * HttpHeaders headers = new HttpHeaders(); String authString =
-	 * "grt.goblin@gmail.com:Indi@#123";//+ "yTMUWblaQN2KU60sddny519A"; String auth
-	 * = Base64.getEncoder().encodeToString(authString.getBytes());
-	 * 
-	 * headers.add("Authorization", "Basic " + auth);
-	 * headers.setContentType(MediaType.APPLICATION_JSON);
-	 * 
-	 * HttpEntity<JiraRequestMessage> httpReq = new
-	 * HttpEntity<JiraRequestMessage>(jiraMessage, headers);
-	 * 
-	 * try { HttpEntity<JiraResponseMessage> resp =
-	 * restTemplate.postForEntity(AllUrls.JIRA_LOCAL_CREATE_ISSUE_ENDPOINT, httpReq,
-	 * JiraResponseMessage.class); return resp;
-	 * 
-	 * } catch(Exception e) { logger.error("Error creating jira :", e); }
-	 * 
-	 * return new HttpEntity<JiraResponseMessage>(new JiraResponseMessage()); }
+	 *
 	 */
 	
 }
