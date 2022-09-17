@@ -1,0 +1,17 @@
+server:
+  port: 8081
+
+logging:
+  level:
+    com.netflix.eureka: OFF
+    com.netflix.discovery: OFF
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8090/eureka/
+    registerWithEureka: true
+    fetchRegistry: true
+  instance:
+    appname: bot-server
+
