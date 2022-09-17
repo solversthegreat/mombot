@@ -14,8 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-//import com.code.solvers.dialogflow.model.response.DialogFlowQueryResponse;
-//import com.code.solvers.dialogflow.model.response.Message;
+import com.code.solvers.nlp.model.Response;
 import com.code.solvers.model.AllUrls;
 import com.code.solvers.model.BotServerIncomingMessage;
 import com.code.solvers.model.BotServerOutgoingMessage;
@@ -76,7 +75,7 @@ public class BotServerQueueReader implements Runnable {
 				BotServerOutgoingMessage omessage = new BotServerOutgoingMessage();
 				omessage.setIncomingMessage(message);
 				
-				HttpEntity<DialogFlowQueryResponse> response = queryDialogflow(message);
+				HttpEntity<Response> response = queryDialogflow(message);
 				
 				if(response != null && response.getBody() != null) {
 					omessage.setResponseText(getTextOutofResponse(response.getBody()));
@@ -99,7 +98,7 @@ public class BotServerQueueReader implements Runnable {
 	
 	
 
-	private String getTextOutofResponse(DialogFlowQueryResponse response) {
+	private String getTextOutofResponse(Response response) {
 		StringBuilder sb = new StringBuilder();
 		for(Message m : response.getResult().getFulfillment().getMessages()) {
 			sb.append(m.getSpeech()).append("\n");
@@ -108,16 +107,16 @@ public class BotServerQueueReader implements Runnable {
 		return sb.toString();
 	}
 
-	private HttpEntity<DialogFlowQueryResponse> queryDialogflow(BotServerIncomingMessage message) {
+	private HttpEntity<Response> queryDialogflow(BotServerIncomingMessage message) {
 		
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		
 		HttpEntity<BotServerIncomingMessage> requestObj = new HttpEntity<BotServerIncomingMessage>(message, headers);
 		
-		ResponseEntity<DialogFlowQueryResponse> resp = null;
+		ResponseEntity<Response> resp = null;
 		try {
-			resp = restTemplate.postForEntity(AllUrls.BOT_SERVER_TO_DIALOG_FLOW, requestObj, DialogFlowQueryResponse.class);
+			resp = restTemplate.postForEntity(AllUrls.BOT_SERVER_TO_DIALOG_FLOW, requestObj, Response.class);
 			return resp;
 		} catch(Exception e) {
 			logger.error("Error connecting to dialogflow :", e);
