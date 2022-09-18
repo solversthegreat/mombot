@@ -42,6 +42,9 @@ public class RocketAdapterQueueEndpoint {
 	@Autowired
 	private RocketAdapter adapter;
 
+	@Value("${rocketchat.room.name}")
+	private String rocketChatRoomName;
+
 	@Value("${nlp.summary.endpoint}")
 	private String nlpSummaryEndpoint;
 
@@ -127,6 +130,9 @@ public class RocketAdapterQueueEndpoint {
 
 			HashMap<String,String> updatedMap = createJira(actionItemsResponse.getBody());
 
+			if(updatedMap == null || updatedMap.size() == 0)
+				updatedMap = actionItemsResponse.getBody();
+
 			List<String> actionItems = updatedMap.entrySet().stream().map(e -> e.getKey() + " - " + e.getValue())
 					.collect(Collectors.toList());
 			emailContent.setActionItems(actionItems);
@@ -195,7 +201,7 @@ public class RocketAdapterQueueEndpoint {
 			HttpHeaders headers = getHeaders();
 			HttpEntity<Void> request = new HttpEntity<>(headers);
 			Map<String, String> params = new HashMap<>();
-			params.put("room", "dailystandup");
+			params.put("room", rocketChatRoomName);
 			
 			response = template.exchange(
 					AllUrls.ROCKET_CHAT_PARTICIPANTS_ENDPOINT, 
@@ -223,7 +229,7 @@ public class RocketAdapterQueueEndpoint {
 			HttpHeaders headers = getHeaders();
 			HttpEntity<Void> request = new HttpEntity<>(headers);
 			Map<String, String> params = new HashMap<>();
-			params.put("room", "dailystandup");
+			params.put("room", rocketChatRoomName);
 			
 			response = template.exchange(
 					AllUrls.ROCKET_CHAT_HISOTRY_ENDPOINT, 
@@ -250,7 +256,7 @@ public class RocketAdapterQueueEndpoint {
 			HttpHeaders headers = getHeaders();
 			HttpEntity<Void> request = new HttpEntity<>(headers);
 			Map<String, String> params = new HashMap<>();
-			params.put("room", "dailystandup");
+			params.put("room", rocketChatRoomName);
 			
 			response = template.exchange(
 					AllUrls.ROCKET_GROUP_MESSAGES_ENDPOINT, 
@@ -282,7 +288,7 @@ public class RocketAdapterQueueEndpoint {
 	
 	private ResponseEntity<String> postMessageToChat(String msg, RocketIncomingMessage inMessage) {
 		RocketChatPostMessage chatPostMessage = new RocketChatPostMessage();
-		chatPostMessage.setChannel("#dailystandup");
+		chatPostMessage.setChannel("#"+rocketChatRoomName);
 		chatPostMessage.setRoomId(inMessage.getChannel_id());
 		chatPostMessage.setText(msg);
 		
@@ -485,7 +491,8 @@ public class RocketAdapterQueueEndpoint {
 
 			try {
 				HttpEntity<JiraResponseMessage> resp = template.postForEntity(jiraConnectorEndpoint, httpReq, JiraResponseMessage.class);
-				updatedUserVsActionItems.put(entry.getKey(), entry.getValue()+" - "+jiraBrowseUrl+resp.getBody().getKey());
+				if(resp != null && resp.getBody() != null && resp.getBody().getKey() != null)
+					updatedUserVsActionItems.put(entry.getKey(), entry.getValue()+" - "+jiraBrowseUrl+resp.getBody().getKey());
 			} catch(Exception e) {
 				logger.error("Error creating jira :", e);
 			}
