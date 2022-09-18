@@ -9,7 +9,7 @@ public class Me implements Serializable {
 
 	private String id;
 	private String name;
-	private List<Email> emails = null;
+	private List<EmailAddress> emailAddresses = null;
 	private String status;
 	private String statusConnection;
 	private String username;
@@ -36,12 +36,12 @@ public class Me implements Serializable {
 		this.name = name;
 	}
 
-	public List<Email> getEmails() {
-		return emails;
+	public List<EmailAddress> getEmails() {
+		return emailAddresses;
 	}
 
-	public void setEmails(List<Email> emails) {
-		this.emails = emails;
+	public void setEmails(List<EmailAddress> emailAddresses) {
+		this.emailAddresses = emailAddresses;
 	}
 
 	public String getStatus() {

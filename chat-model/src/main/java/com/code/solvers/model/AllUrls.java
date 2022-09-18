@@ -17,7 +17,8 @@ public class AllUrls {
 	public static String JIRA_CREATE_ISSUE_ENDPOINT = "https://thegreatsolvers.atlassian.net/rest/api/3/issue";
 	public static String JIRA_LOCAL_CREATE_ISSUE_ENDPOINT = "http://jira-connector/jira/connector/incident";
 	public static String ROCKET_TO_BOT_SERVER_INCOMING = "http://bot-server/bot/server/incoming/push";
-	public static String NLP_SUMMARY_ENDPOINT = "https://af0f-2409-4042-4e0a-1442-163-7f76-b35a-cb19.in.ngrok.io/summary/dialogue/{input}";
+	public static String NLP_SUMMARY_ENDPOINT = "https://nlp-hub-processor.herokuapp.com/summary/dialogue/{input}";
+	public static String NLP_DATAPROCESSOR_ENDPOINT = "https://c8e9-2401-4900-1cb9-f37-3c48-9c6e-ad95-fca1.ngrok.io/nlp/getActionItem";
 	
 }
 

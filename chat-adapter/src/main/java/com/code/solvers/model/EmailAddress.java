@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Email implements Serializable {
+public class EmailAddress implements Serializable {
 
 	private String address;
 	private Boolean verified;

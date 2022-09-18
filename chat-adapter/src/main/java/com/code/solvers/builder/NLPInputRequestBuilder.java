@@ -14,7 +14,7 @@ public class NLPInputRequestBuilder {
 		StringBuilder sb = new StringBuilder();
 		
 		for (Message message : messages) {
-			sb.append(message.getU().getUsername()).append(": ").append(message.getMsg()).append(System.lineSeparator());
+			sb.append(message.getU().getUsername()).append(": ").append(message.getMsg()).append(" . ").append(System.lineSeparator());
 		}
 		
 		return sb.toString();
