@@ -51,6 +51,9 @@ public class RocketAdapterQueueEndpoint {
 	@Value("${jira.connector.endpoint}")
 	private String jiraConnectorEndpoint;
 
+	@Value("${jira.browse-url}")
+	private String jiraBrowseUrl;
+
 	@Autowired
 	private RestTemplate restTemplate;
 
@@ -112,13 +115,7 @@ public class RocketAdapterQueueEndpoint {
 			botServerQueue.push(message);
 			
 			logger.info("Message pushed");
-			
-			/*RocketChatReact reactMsg = new RocketChatReact();
-			reactMsg.setEmoji(":smile:");
-			reactMsg.setMessageId(message.getMessage_id());
-			reactMsg.setShouldReact(true);
-			
-			reactToChat(reactMsg);*/
+
 			String summaryInputContent = getAndPrepareGroupMessages();
 			ResponseEntity<String[]> response = getSummary(summaryInputContent);
 
@@ -127,7 +124,10 @@ public class RocketAdapterQueueEndpoint {
 			emailContent.setSummaryPoints(summaryPoints);
 
 			ResponseEntity<HashMap<String,String>> actionItemsResponse = getActionItems(summaryInputContent);
-			List<String> actionItems = actionItemsResponse.getBody().entrySet().stream().map(e -> e.getKey() + " - " + e.getValue())
+
+			HashMap<String,String> updatedMap = createJira(actionItemsResponse.getBody());
+
+			List<String> actionItems = updatedMap.entrySet().stream().map(e -> e.getKey() + " - " + e.getValue())
 					.collect(Collectors.toList());
 			emailContent.setActionItems(actionItems);
 
@@ -140,7 +140,6 @@ public class RocketAdapterQueueEndpoint {
 			// process & send email
 			emailProcessingService.sendEmail(emailContent, extractUniqueEmailIDs(USER_EMAIL_IDS_STORE));
 
-			//ToDO: fix first param in below
 			return postMessageToChat("MoM has been shared.", message);
 			
 		} catch (Exception e) {
@@ -151,12 +150,6 @@ public class RocketAdapterQueueEndpoint {
 	}
 
 	private String[] extractUniqueEmailIDs(Map<String, List<Email>> userVsEmailMap) {
-//		Set<String> emailIds = new HashSet<>();
-//		for(List<EmailAddress> emailAddressObjs : userVsEmailMap.values()) {
-//			for(EmailAddress emailAddressObj : (List<EmailAddress>) emailAddressObjs) {
-//				emailIds.add(emailAddressObj.getAddress());
-//			}
-//		}
 
 		Set<String> emailIds = userVsEmailMap.entrySet().stream().flatMap(entry -> entry.getValue().stream())
 				.map(obj -> obj.getAddress()).collect(Collectors.toSet());
@@ -276,9 +269,10 @@ public class RocketAdapterQueueEndpoint {
 	public ResponseEntity<JiraResponseMessage> createJiraIncident() {
 		logger.info("Request received to create JIRA incident.");
 		ResponseEntity<JiraResponseMessage> response = null;
-		
+		HashMap<String,String> sampleData = new HashMap<>();
+		sampleData.put("Admin","Demo Title123");
 		try {
-			createJira("Demo tile", "Testing JIRA creation");
+			createJira(sampleData);
 		} catch(Exception e) {
 			logger.error("Error while creating JIRA incident.");
 		}
@@ -466,40 +460,39 @@ public class RocketAdapterQueueEndpoint {
 		
 	}
 
-	private HttpEntity<JiraResponseMessage> createJira(String title, String desc) {
-		JiraRequestMessage jiraMessage = new JiraRequestMessage();
-		
-		Issuetype issueType = new Issuetype();
-		issueType.setName("Task");
-		
-		Project project = new Project();
-		project.setKey("FIRST");
+	private HashMap<String,String> createJira(HashMap<String,String> userVsActionItems) {
+		HashMap<String,String> updatedUserVsActionItems = new HashMap<>();
+		for (Map.Entry<String,String> entry : userVsActionItems.entrySet()) {
+			JiraRequestMessage jiraMessage = new JiraRequestMessage();
 
-		//Description description = new Description();
+			Issuetype issueType = new Issuetype();
+			issueType.setName("Task");
 
-		Fields fields = new Fields();
-		fields.setProject(project);
-		fields.setIssuetype(issueType);
-		fields.setSummary(title);
-		//fields.setDescription(description);
-		Assignee assignee = new Assignee();
-		assignee.setName("admin");
-		
-		jiraMessage.setFields(fields);
-		
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
+			Project project = new Project();
+			project.setKey("FIRST");
 
-		HttpEntity<JiraRequestMessage> httpReq = new HttpEntity<JiraRequestMessage>(jiraMessage, headers);
-		
-		try {
-			HttpEntity<JiraResponseMessage> resp = template.postForEntity(jiraConnectorEndpoint, httpReq, JiraResponseMessage.class);
-			return resp;
-		} catch(Exception e) {
-			logger.error("Error creating jira :", e);
+			Fields fields = new Fields();
+			fields.setProject(project);
+			fields.setIssuetype(issueType);
+			fields.setSummary(entry.getValue());
+
+			jiraMessage.setFields(fields);
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_JSON);
+
+			HttpEntity<JiraRequestMessage> httpReq = new HttpEntity<JiraRequestMessage>(jiraMessage, headers);
+
+			try {
+				HttpEntity<JiraResponseMessage> resp = template.postForEntity(jiraConnectorEndpoint, httpReq, JiraResponseMessage.class);
+				updatedUserVsActionItems.put(entry.getKey(), entry.getValue()+" - "+jiraBrowseUrl+resp.getBody().getKey());
+			} catch(Exception e) {
+				logger.error("Error creating jira :", e);
+			}
+
 		}
-		
-		return new HttpEntity<JiraResponseMessage>(new JiraResponseMessage());
+
+		return updatedUserVsActionItems;
 	}
 	
 }

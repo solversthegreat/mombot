@@ -26,6 +26,9 @@ public class JiraConnector {
 	@Value("${jira.create.endpoint}")
 	private String jiraCreateEndpoint;
 
+	@Value("${jira.token}")
+	private String token;
+
 	private Logger logger = Logger.getLogger(JiraConnector.class);
 
 	@Autowired
@@ -70,6 +73,6 @@ public class JiraConnector {
 	}
 	
 	private String getToken() {
-		return "Tov2tU7rHXMENF1XVnkY39F4";
+		return token;
 	}
 }

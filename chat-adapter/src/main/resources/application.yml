@@ -41,5 +41,6 @@ nlp:
     endpoint: ${NLP_DATAPROCESSOR_URL:https://c8e9-2401-4900-1cb9-f37-3c48-9c6e-ad95-fca1.ngrok.io/nlp/getActionItem}
 
 jira:
+  browse-url: ${JIRA_BROWSE_URL:https://thegreatsolvers.atlassian.net/browse/}
   connector:
-    endpoint: ${JIRA_CONNECTOR_URL:http://jira-connector/jira/connector/incident}
+    endpoint: ${JIRA_CONNECTOR_URL:https://jira-connector-solvers.herokuapp.com/jira/connector/incident}

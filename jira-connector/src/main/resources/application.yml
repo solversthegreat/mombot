@@ -16,3 +16,4 @@ http:
 jira:
   create:
     endpoint: https://thegreatsolvers.atlassian.net/rest/api/3/issue
+  token: ${JIRA_TOKEN:MtC2onjo70acokurFwyBB357}
