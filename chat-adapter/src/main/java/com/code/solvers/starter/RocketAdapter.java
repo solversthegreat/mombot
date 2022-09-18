@@ -31,7 +31,6 @@ public class RocketAdapter {
 		logger.info("*****Rocket login successful*********");
 		ExecutorService es = Executors.newFixedThreadPool(1);
 		es.execute(new RocketAdapterQueueReader(queue, this, restTemplate));
-		
 	}
 
 	private void loginToRocket(int attempt) {
@@ -51,7 +50,6 @@ public class RocketAdapter {
 			} else {
 				logger.error("Failed to login to rocket using credentials: "
 						+ loginPojo + ". Response received :" + response);
-				
 			}
 		} catch (Exception e) {
 			logger.error("Failed to login to rocket using credentials: "+ loginPojo.getUsername() + ". Response received :" + e.getMessage());

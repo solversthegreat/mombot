@@ -22,6 +22,7 @@ public class JiraEndpoint {
 	@RequestMapping("/jira/connector/incident")
 	public HttpEntity<JiraResponseMessage> push(@RequestBody JiraRequestMessage message) {
 		logger.info("Jira Create request received.");
+		
 		return adapter.processJiraRequest(message);
 	}
 	

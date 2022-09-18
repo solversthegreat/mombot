@@ -1,7 +1,6 @@
 package com.code.solvers.starter;
 
 import java.time.Duration;
-import java.util.Base64;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,8 +35,8 @@ public class JiraConnector {
 		try {
 			HttpEntity<JiraResponseMessage> r = restTemplate.postForEntity(AllUrls.JIRA_CREATE_ISSUE_ENDPOINT, getJiraRequest(message), JiraResponseMessage.class);
 			response = new HttpEntity<JiraResponseMessage>(r.getBody(), r.getHeaders());
-			return response;
 			
+			return response;
 		} catch(Exception e) {
 			logger.error("Error while creating issue in JIRA: ", e);
 		}

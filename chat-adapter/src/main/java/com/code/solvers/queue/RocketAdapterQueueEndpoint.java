@@ -1,12 +1,8 @@
 package com.code.solvers.queue;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.mail.internet.MimeMessage;
 
@@ -16,6 +12,7 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -28,12 +25,7 @@ import org.springframework.web.client.RestTemplate;
 import org.thymeleaf.context.Context;
 
 
-import com.code.solvers.nlp.model.BotCompleteMessage;
-//import com.code.pilots.dialogflow.model.response.DffUserData;
-//import com.code.pilots.dialogflow.model.response.DialogFlowFulfillmentResponse;
-import com.code.solvers.nlp.model.OriginalRequest;
 import com.code.solvers.nlp.model.Response;
-//import com.code.pilots.dialogflow.model.response.Result;
 import com.code.solvers.jira.model.Assignee;
 import com.code.solvers.jira.model.Fields;
 import com.code.solvers.jira.model.Issuetype;
@@ -48,9 +40,6 @@ import com.code.solvers.model.ChannelHistory;
 import com.code.solvers.model.GroupMessages;
 import com.code.solvers.model.RocketChatPostMessage;
 import com.code.solvers.model.RocketChatReact;
-import com.code.solvers.model.TickerData;
-import com.code.solvers.model.rocket.GroupCreate;
-import com.code.solvers.model.rocket.GroupCreateResponse;
 import com.code.solvers.model.rocket.RocketIncomingMessage;
 import com.code.solvers.starter.RocketAdapter;
 
@@ -81,7 +70,8 @@ public class RocketAdapterQueueEndpoint {
 	
 	public RocketAdapterQueueEndpoint(RestTemplateBuilder rtb) {
 		template = rtb.setConnectTimeout(Duration.ofMillis(AllUrls.TIMEOUT_IN_MILLISECOND))
-				.setReadTimeout(Duration.ofMillis(AllUrls.TIMEOUT_IN_MILLISECOND)).build();
+						.setReadTimeout(Duration.ofMillis(AllUrls.TIMEOUT_IN_MILLISECOND))
+						.build();
 		USER_EMAIL_ID_STORE = new HashMap<String, String>();
 		INC_TO_ROCKETMSG_STORE = new HashMap<String, RocketIncomingMessage>();
 	}
@@ -99,6 +89,36 @@ public class RocketAdapterQueueEndpoint {
 		} catch (Exception e) {
 			logger.error("Error processing rocket adapter incoming message", e);
 		}
+	}
+	
+	/**
+	 * End point to be called by chat client to kick start the flow
+	 * @param message
+	 */
+	@RequestMapping("/rocket/adapter/incoming/mom")
+	public ResponseEntity<String> generateMOM(@RequestBody RocketIncomingMessage message) {
+		
+		logger.info("Message received from chat client.");
+		
+		try {
+			botServerQueue.push(message);
+			
+			logger.info("Message pushed");
+			
+			/*RocketChatReact reactMsg = new RocketChatReact();
+			reactMsg.setEmoji(":smile:");
+			reactMsg.setMessageId(message.getMessage_id());
+			reactMsg.setShouldReact(true);
+			
+			reactToChat(reactMsg);*/
+			ResponseEntity<String> response = getSummary("");
+			return postMessageToChat(response.getBody(), message);
+			
+		} catch (Exception e) {
+			logger.error("Error processing rocket adapter incoming message", e);
+		}
+		
+		return new ResponseEntity<String>(HttpStatus.OK);
 	}
 	
 	@RequestMapping("/rocket/adapter/outgoing/push")
@@ -123,7 +143,9 @@ public class RocketAdapterQueueEndpoint {
 		logger.info("Request received to react to a chat.");
 		try {
 			HttpEntity<RocketChatReact> request= getRequest(reactMessage);
-			template.postForObject(AllUrls.ROCKET_CHAT_REACT_ENDPOINT, request, Boolean.class);
+			template.postForObject(AllUrls.ROCKET_CHAT_REACT_ENDPOINT, request, String.class);
+			
+			
 		} catch(Exception e) {
 			logger.error("Error while reacting to chat with details: " + reactMessage);
 		}
@@ -210,14 +232,73 @@ public class RocketAdapterQueueEndpoint {
 	public ResponseEntity<JiraResponseMessage> createJiraIncident() {
 		logger.info("Request received to create JIRA incident.");
 		ResponseEntity<JiraResponseMessage> response = null;
+		
 		try {
 			createJira("Demo tile", "Testing JIRA creation");
-			
 		} catch(Exception e) {
 			logger.error("Error while creating JIRA incident.");
 		}
 		
 		return response;
+	}
+	
+	private ResponseEntity<String> postMessageToChat(String msg, RocketIncomingMessage inMessage) {
+		RocketChatPostMessage chatPostMessage = new RocketChatPostMessage();
+		chatPostMessage.setChannel("#dailystandup");
+		chatPostMessage.setRoomId(inMessage.getChannel_id());
+		chatPostMessage.setText(msg);
+		
+		try {
+			HttpHeaders headers = getHeaders();
+			HttpEntity<RocketChatPostMessage> request = new HttpEntity<>(chatPostMessage, headers);
+			
+			ResponseEntity<String> response = template.exchange(
+					AllUrls.ROCKET_POST_MESSAGE_ENDPOINT, 
+					HttpMethod.POST, 
+					request, 
+					String.class);
+			
+			logger.info("Message pushed to rocket");
+			
+			return response;
+			
+		} catch (Exception e) {
+			logger.error("Error processing outgoing message", e);
+		}
+		
+		return new ResponseEntity<String>(HttpStatus.OK);
+	}
+	
+	private ResponseEntity<String> getSummary(String content) {
+		logger.info("Requesting NLP engine to get the summary.");
+		try {
+			HttpHeaders headers = getCommonHeaders(null);
+			HttpEntity<RocketChatPostMessage> request = new HttpEntity<>(headers);
+			Map<String, String> params = new HashMap<>();
+			
+			content = "Jules: Hey kids! How you boys doin’?\r\n"
+					+ "Jules: (Speaking to the guy laying on the couch) Hey, keep chillin’. You know who we are? We’re associates of your business partner Marsellus Wallace. You do remember your business partner don’t you? Let me take a wild guess here. You’re Brett, right?\r\n"
+					+ "Brett: Yeah.\r\n"
+					+ "Jules: I thought so. You remember your business partner Marsellus Wallace, don’t you, Brett?\r\n"
+					+ "Brett: Yeah, yeah, I remember him.\r\n"
+					+ "Jules: Good. Looks like me an Vincent caught you boys at breakfast. Sorry about that. Whatcha havin’?\r\n"
+					+ "Brett: Hamburgers.";
+			params.put("input", content);
+			
+			ResponseEntity<String> response = template.exchange(
+					AllUrls.NLP_SUMMARY_ENDPOINT, 
+					HttpMethod.POST, 
+					request, 
+					String.class,
+					params);
+			
+			return response;
+			
+		} catch (Exception e) {
+			logger.error("Error processing NLP engine to get the summary", e);
+		}
+		
+		return new ResponseEntity<String>(HttpStatus.OK);
 	}
 	
 	private HttpEntity<RocketChatPostMessage> getRequest(BotServerOutgoingMessage message){
@@ -239,18 +320,20 @@ public class RocketAdapterQueueEndpoint {
 		return new HttpEntity<RocketChatReact>(reactMessage, headers);
 	}
 	
-	private HttpHeaders getHeadersCommanForAll() {
-		HttpHeaders headers = new HttpHeaders();
+	private HttpHeaders getCommonHeaders(HttpHeaders headers) {
+		if (headers == null) {
+			headers = new HttpHeaders();
+		}
 		headers.setContentType(MediaType.APPLICATION_JSON);
+		
 		return headers;
 	}
 	
 	private HttpHeaders getHeaders() {
 		HttpHeaders headers = new HttpHeaders();
-        
+		headers = getCommonHeaders(headers);
 		headers.add("X-Auth-Token", adapter.getLoginData().getAuthToken());
 		headers.add("X-User-Id", adapter.getLoginData().getUserId());
-		headers.setContentType(MediaType.APPLICATION_JSON);
 		
 		return headers;
 	}
@@ -258,7 +341,7 @@ public class RocketAdapterQueueEndpoint {
 	private void invokeJiraWebhook(Response webhookInput) {
 		String jiraKey = webhookInput.getIssue().getKey();
 		String jiraStatus = webhookInput.getIssue().getFields().getStatus().getName();
-		logger.info("Received Jira webhook call for :"+jiraKey);
+		logger.info("Received Jira webhook call for :" + jiraKey);
 		
 		RocketIncomingMessage rocketMsg = INC_TO_ROCKETMSG_STORE.get(jiraKey.toUpperCase());
 		if(rocketMsg == null) {
@@ -275,8 +358,8 @@ public class RocketAdapterQueueEndpoint {
 		}
 		
 		sb.append("*Ticket: * "+jiraKey);
-		sb.append("\r\n*Ticket Link: * https://greatgoblin.atlassian.net/browse/"+jiraKey);
-		sb.append("\r\n*Status: *"+jiraStatus);
+		sb.append("\r\n*Ticket Link: * https://thegreatsolvers.atlassian.net/browse/" + jiraKey);
+		sb.append("\r\n*Status: *" + jiraStatus);
 		
 		om.setResponseText(sb.toString());
 		om.setIncomingMessage(im);
@@ -317,21 +400,21 @@ public class RocketAdapterQueueEndpoint {
 	private HttpEntity<JiraResponseMessage> createJira(String title, String desc) {
 		JiraRequestMessage jiraMessage = new JiraRequestMessage();
 		
-		Issuetype it = new Issuetype();
-		it.setName("Task");
+		Issuetype issueType = new Issuetype();
+		issueType.setName("Task");
 		
-		Project p = new Project();
-		p.setKey("FIRST");
+		Project project = new Project();
+		project.setKey("FIRST");
 		
-		Fields f = new Fields();
-		f.setProject(p);
-		f.setIssuetype(it);
-		f.setSummary(title);
-		f.setDescription(desc);
-		Assignee a = new Assignee();
-		a.setName("admin");
+		Fields fields = new Fields();
+		fields.setProject(project);
+		fields.setIssuetype(issueType);
+		fields.setSummary(title);
+		fields.setDescription(desc);
+		Assignee assignee = new Assignee();
+		assignee.setName("admin");
 		
-		jiraMessage.setFields(f);
+		jiraMessage.setFields(fields);
 		
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
@@ -341,94 +424,11 @@ public class RocketAdapterQueueEndpoint {
 		try {
 			HttpEntity<JiraResponseMessage> resp = restTemplate.postForEntity(AllUrls.JIRA_LOCAL_CREATE_ISSUE_ENDPOINT, httpReq, JiraResponseMessage.class);
 			return resp;
-			
 		} catch(Exception e) {
 			logger.error("Error creating jira :", e);
 		}
 		
 		return new HttpEntity<JiraResponseMessage>(new JiraResponseMessage());
 	}
-	  
-	 
-	 /* private HttpEntity<DialogFlowFulfillmentResponse> createInc(DffUserData data,
-	 * Result result, String userId, DialogFlowQueryResponse webhookInput) {
-	 * 
-	 * Map<String, String> pm = result.getParameters(); String incTitle =
-	 * pm.get("inctitle"); String incDescription = pm.get("incdescription");
-	 * 
-	 * HttpEntity<DialogFlowFulfillmentResponse> response;
-	 * HttpEntity<JiraResponseMessage> jiraResp = createJira(incTitle,
-	 * incDescription);
-	 * 
-	 * 
-	 * String link = ""; String msg = "";
-	 * 
-	 * if(jiraResp.getBody() != null) { String jiraKey =
-	 * jiraResp.getBody().getKey(); if(jiraKey != null) { link =
-	 * "https://thegreatsolvers.atlassian.net/browse/"+jiraResp.getBody().getKey(); msg
-	 * = "A Ticket for you has been created. Here is the link \n. "
-	 * +link+"\n. Please quote this ticket number for any communication regarding this discussion."
-	 * ; Context c = new Context(); c.setVariable("inckey", jiraKey);
-	 * c.setVariable("inclink", link);
-	 * 
-	 * INC_TO_ROCKETMSG_STORE.put(jiraKey.toUpperCase(),
-	 * webhookInput.getOriginalRequest().getData().getIncomingMessage());
-	 * 
-	 * send("Alphabot : Ticket "+jiraKey+" has been created for you",
-	 * "grt.goblin@gmail.com", "incraised", null, c); } else { msg =
-	 * "Failed to create ticket. :-("; } } else { msg =
-	 * "Failed to create ticket. :-("; }
-	 * 
-	 * logger.info(msg);
-	 * 
-	 * data.setUserData(jiraResp); DialogFlowFulfillmentResponse r = new
-	 * DialogFlowFulfillmentResponse(); r.setDisplayText(msg); r.setSpeech(msg);
-	 * r.setData(data);
-	 * 
-	 * response = new HttpEntity<DialogFlowFulfillmentResponse>(r,
-	 * jiraResp.getHeaders()); return response; }
-	 * 
-	 * private HttpEntity<GroupCreateResponse> createGroup(Response webhookInput) {
-	 * 
-	 * HttpHeaders headers = new HttpHeaders();
-	 * headers.setContentType(MediaType.APPLICATION_JSON); OriginalRequest
-	 * originalRequest = webhookInput.getOriginalRequest();
-	 * logger.info("Request received to create a group.");
-	 * 
-	 * if(originalRequest != null) {
-	 * if(originalRequest.getSource().contains("telegram") ||
-	 * originalRequest.getSource().contains("slack")) { logger.
-	 * info("Create group is not supported for client other than rocket chat.");
-	 * return new HttpEntity<GroupCreateResponse>(headers); } }
-	 * 
-	 * try { HttpEntity<GroupCreate> request = getGroupCreateRequest(webhookInput);
-	 * GroupCreateResponse createGroupResponse =
-	 * template.postForObject(AllUrls.ROCKET_CREATE_GROUP_ENDPOINT, request,
-	 * GroupCreateResponse.class); HttpEntity<GroupCreateResponse> resp = new
-	 * HttpEntity<GroupCreateResponse>(createGroupResponse, headers); return resp;
-	 * 
-	 * } catch (Exception e) { logger.
-	 * error("Error processing while creating new group, using object from dialogflow"
-	 * + webhookInput); return new HttpEntity<GroupCreateResponse>(headers); } }
-	 * 
-	 * private HttpEntity<GroupCreate> getGroupCreateRequest(Response dfObject) {
-	 * HttpHeaders headers = new HttpHeaders(); headers.add("X-Auth-Token",
-	 * adapter.getLoginData().getAuthToken()); headers.add("X-User-Id",
-	 * adapter.getLoginData().getUserId());
-	 * headers.setContentType(MediaType.APPLICATION_JSON);
-	 * 
-	 * Map<String, String> parameters = dfObject.getResult().getParameters();
-	 * List<String> groupChatUses = new ArrayList<String>();
-	 * 
-	 * for(Entry<String, String> e : parameters.entrySet()) {
-	 * if(e.getKey().contains("userIdForGroupChat")) {
-	 * groupChatUses.add(e.getValue()); } } GroupCreate gc = new GroupCreate();
-	 * gc.setReadOnly("false");
-	 * gc.setName("CustomerSupport"+System.currentTimeMillis());
-	 * gc.setMembers(groupChatUses);
-	 * 
-	 * return new HttpEntity<GroupCreate>(gc, headers); }
-	 *
-	 */
 	
 }
