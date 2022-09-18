@@ -6,3 +6,7 @@ def convert_to_bullet(text :str):
     text = "\n".join(lines)
     return text
      
+def convert_to_list(text :str):
+    lines = text.split('.')
+    test_list = [i for i in lines if i]
+    return test_list
