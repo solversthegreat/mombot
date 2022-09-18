@@ -9,3 +9,10 @@ eureka:
     fetchRegistry: true
   instance:
     appname: jira-connector
+
+http:
+  timeout: 20000
+
+jira:
+  create:
+    endpoint: https://thegreatsolvers.atlassian.net/rest/api/3/issue

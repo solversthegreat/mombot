@@ -1,4 +1,4 @@
-package com.code.solvers.jira.model;
+package com.code.solvers.model;
 
 public class Fields {
 	private Project project;

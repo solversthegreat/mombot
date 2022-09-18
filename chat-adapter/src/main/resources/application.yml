@@ -39,3 +39,7 @@ nlp:
     endpoint: ${NLP_SUMMARY_URL:https://nlp-hub-processor.herokuapp.com/summary/dialogue/{input}}
   dataprocessor:
     endpoint: ${NLP_DATAPROCESSOR_URL:https://c8e9-2401-4900-1cb9-f37-3c48-9c6e-ad95-fca1.ngrok.io/nlp/getActionItem}
+
+jira:
+  connector:
+    endpoint: ${JIRA_CONNECTOR_URL:http://jira-connector/jira/connector/incident}

@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import com.code.solvers.email.EmailProcessingService;
+import com.code.solvers.jira.model.*;
 import com.code.solvers.model.*;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,12 +28,6 @@ import org.springframework.web.client.RestTemplate;
 
 import com.code.solvers.nlp.model.Response;
 import com.code.solvers.builder.NLPInputRequestBuilder;
-import com.code.solvers.jira.model.Assignee;
-import com.code.solvers.jira.model.Fields;
-import com.code.solvers.jira.model.Issuetype;
-import com.code.solvers.jira.model.JiraRequestMessage;
-import com.code.solvers.jira.model.JiraResponseMessage;
-import com.code.solvers.jira.model.Project;
 import com.code.solvers.model.rocket.RocketIncomingMessage;
 import com.code.solvers.starter.RocketAdapter;
 
@@ -52,6 +47,9 @@ public class RocketAdapterQueueEndpoint {
 
 	@Value("${nlp.dataprocessor.endpoint}")
 	private String nlpDataProcessorEndpoint;
+
+	@Value("${jira.connector.endpoint}")
+	private String jiraConnectorEndpoint;
 
 	@Autowired
 	private RestTemplate restTemplate;
@@ -476,12 +474,14 @@ public class RocketAdapterQueueEndpoint {
 		
 		Project project = new Project();
 		project.setKey("FIRST");
-		
+
+		//Description description = new Description();
+
 		Fields fields = new Fields();
 		fields.setProject(project);
 		fields.setIssuetype(issueType);
 		fields.setSummary(title);
-		fields.setDescription(desc);
+		//fields.setDescription(description);
 		Assignee assignee = new Assignee();
 		assignee.setName("admin");
 		
@@ -493,7 +493,7 @@ public class RocketAdapterQueueEndpoint {
 		HttpEntity<JiraRequestMessage> httpReq = new HttpEntity<JiraRequestMessage>(jiraMessage, headers);
 		
 		try {
-			HttpEntity<JiraResponseMessage> resp = restTemplate.postForEntity(AllUrls.JIRA_LOCAL_CREATE_ISSUE_ENDPOINT, httpReq, JiraResponseMessage.class);
+			HttpEntity<JiraResponseMessage> resp = template.postForEntity(jiraConnectorEndpoint, httpReq, JiraResponseMessage.class);
 			return resp;
 		} catch(Exception e) {
 			logger.error("Error creating jira :", e);
