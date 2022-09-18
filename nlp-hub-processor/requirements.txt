@@ -1,0 +1,4 @@
+nlpcloud
+fastapi
+gunicorn
+uvicorn
