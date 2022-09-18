@@ -1,0 +1,17 @@
+server:
+  port: 8300
+
+spring:
+  application:
+    name: nlp-dataprocessor
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8090/eureka/
+    registerWithEureka: true
+    fetchRegistry: true
+
+springdoc:
+  swagger-ui:
+    path: /docs
