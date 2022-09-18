@@ -140,7 +140,7 @@ public class RocketAdapterQueueEndpoint {
 			// process & send email
 			emailProcessingService.sendEmail(emailContent, extractUniqueEmailIDs(USER_EMAIL_IDS_STORE));
 
-			return postMessageToChat("MoM has been shared.", message);
+			return postMessageToChat("MoM has been shared to all Meeting recipients.", message);
 			
 		} catch (Exception e) {
 			logger.error("Error processing rocket adapter incoming message", e);
