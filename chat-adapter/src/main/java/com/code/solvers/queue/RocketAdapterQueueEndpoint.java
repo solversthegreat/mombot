@@ -1,17 +1,13 @@
 package com.code.solvers.queue;
 
 import java.time.Duration;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.mail.internet.MimeMessage;
 
+import com.code.solvers.email.EmailProcessingService;
+import com.code.solvers.model.*;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -39,18 +35,6 @@ import com.code.solvers.jira.model.Issuetype;
 import com.code.solvers.jira.model.JiraRequestMessage;
 import com.code.solvers.jira.model.JiraResponseMessage;
 import com.code.solvers.jira.model.Project;
-import com.code.solvers.model.AllUrls;
-import com.code.solvers.model.BotServerIncomingMessage;
-import com.code.solvers.model.BotServerOutgoingMessage;
-import com.code.solvers.model.Channel;
-import com.code.solvers.model.ChannelHistory;
-import com.code.solvers.model.Email;
-import com.code.solvers.model.Group;
-import com.code.solvers.model.GroupMessages;
-import com.code.solvers.model.Message;
-import com.code.solvers.model.RocketChatPostMessage;
-import com.code.solvers.model.RocketChatReact;
-import com.code.solvers.model.User;
 import com.code.solvers.model.rocket.RocketIncomingMessage;
 import com.code.solvers.starter.RocketAdapter;
 
@@ -76,12 +60,17 @@ public class RocketAdapterQueueEndpoint {
 	
 	@Autowired
 	private NLPInputRequestBuilder nlpRequestBuilder;
+
+	@Autowired
+	private EmailProcessingService emailProcessingService;
 	
 	private RestTemplate template;
 	
 	private Map<String, String> USER_EMAIL_ID_STORE;
 	private Map<String, RocketIncomingMessage> INC_TO_ROCKETMSG_STORE;
 	private Map<String, List<Email>> USER_EMAIL_IDS_STORE;
+
+	private EmailContent emailContent = new EmailContent();
 	
 	public RocketAdapterQueueEndpoint(RestTemplateBuilder rtb) {
 		template = rtb.setConnectTimeout(Duration.ofMillis(AllUrls.TIMEOUT_IN_MILLISECOND))
@@ -117,6 +106,7 @@ public class RocketAdapterQueueEndpoint {
 		logger.info("Message received from chat client.");
 		
 		try {
+			String participants = "";
 			botServerQueue.push(message);
 			
 			logger.info("Message pushed");
@@ -128,15 +118,40 @@ public class RocketAdapterQueueEndpoint {
 			
 			reactToChat(reactMsg);*/
 			String summaryInputContent = getAndPrepareGroupMessages();
-			ResponseEntity<String> response = getSummary(summaryInputContent);
+			ResponseEntity<String[]> response = getSummary(summaryInputContent);
+			// set summary points in model
+			List<String> summaryPoints = new ArrayList<>(Arrays.asList(response.getBody()));
+			emailContent.setSummaryPoints(summaryPoints);
+
 			populateUserEmailIds();
-			return postMessageToChat(response.getBody(), message);
+			for(String user : USER_EMAIL_IDS_STORE.keySet()) {
+				participants.concat(user + ", ");
+			}
+			//remove comma and space at the end
+			participants.substring(0, participants.length() - 2);
+			emailContent.setParticipants(participants);
+
+			// process & send email
+			emailProcessingService.sendEmail(emailContent, extractUniqueEmailIDs(USER_EMAIL_IDS_STORE));
+
+			//ToDO: fix first param in below
+			return postMessageToChat(response.getBody().toString(), message);
 			
 		} catch (Exception e) {
 			logger.error("Error processing rocket adapter incoming message", e);
 		}
 		
 		return new ResponseEntity<String>(HttpStatus.OK);
+	}
+
+	private String[] extractUniqueEmailIDs(Map<String, List<Email>> userVsEmailMap) {
+		Set<String> emailIds = new HashSet<>();
+		for(List<Email> emailObjs : userVsEmailMap.values()) {
+			for(Email emailObj : emailObjs) {
+				emailIds.add(emailObj.getAddress());
+			}
+		}
+		return emailIds.toArray(new String[emailIds.size()]);
 	}
 	
 	@RequestMapping("/rocket/adapter/outgoing/push")
@@ -308,7 +323,7 @@ public class RocketAdapterQueueEndpoint {
 		return result;
 	}
 	
-	private ResponseEntity<String> getSummary(String content) {
+	private ResponseEntity<String[]> getSummary(String content) {
 		logger.info("Requesting NLP engine to get the summary.");
 		try {
 			HttpHeaders headers = getCommonHeaders(null);
@@ -327,11 +342,11 @@ public class RocketAdapterQueueEndpoint {
 			
 			params.put("input", content);
 			
-			ResponseEntity<String> response = template.exchange(
+			ResponseEntity<String[]> response = template.exchange(
 					AllUrls.NLP_SUMMARY_ENDPOINT, 
 					HttpMethod.POST, 
-					request, 
-					String.class,
+					request,
+					String[].class,
 					params);
 			
 			return response;
@@ -340,7 +355,7 @@ public class RocketAdapterQueueEndpoint {
 			logger.error("Error processing NLP engine to get the summary", e);
 		}
 		
-		return new ResponseEntity<String>("Couldn't send the MOM Summary.", HttpStatus.OK);
+		return new ResponseEntity<String[]>(new String[]{"Couldn't send the MOM Summary."}, HttpStatus.OK);
 	}
 	
 	private void populateUserEmailIds() {

@@ -1,5 +1,6 @@
 package com.code.solvers.email;
 
+import com.code.solvers.model.EmailContent;
 import com.code.solvers.queue.HtmlEmailBuilder;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,29 +27,23 @@ public class EmailProcessingService {
     @Autowired
     private JavaMailSender mailSender;
 
-    private Map<String, String> USER_EMAIL_ID_STORE;
 
-    public String sendEmail(String subject, String toEmail, String userId) {
+    public String sendEmail(String subject, String[] toEmail, String participants, List<String> summaryPoints,
+                            List<String> actionItems) {
         try {
-            if(USER_EMAIL_ID_STORE == null)
-                USER_EMAIL_ID_STORE = new HashMap<String, String>();
-
             MimeMessage mail = mailSender.createMimeMessage();
             MimeMessageHelper messageHelper = new MimeMessageHelper(mail, true);
             messageHelper.setFrom("Credit Suisse Team<solvers2022@outlook.com>");
             messageHelper.setTo(toEmail);
             messageHelper.setSubject(subject);
             Context context = new Context();
-            context.setVariable("summaryPoints", getSummaryPoints());
-            context.setVariable("participants", getParticipants());
-            context.setVariable("actionItems", getActionItems());
+            context.setVariable("summaryPoints", summaryPoints);
+            context.setVariable("participants", participants);
+            context.setVariable("actionItems", actionItems);
 
             messageHelper.setText(emailBuilder.build(templateName, context), true);
             mailSender.send(mail);
 
-            if(userId != null) {
-                USER_EMAIL_ID_STORE.put(userId, toEmail);
-            }
             return "success";
 
         } catch(Exception e) {
@@ -56,6 +51,13 @@ public class EmailProcessingService {
         }
 
         return "Sorry. Couldn't send the email right now. I will try again back after sometime.";
+    }
+
+    public void sendEmail(EmailContent emailContent, String[] emailIDs) {
+
+        sendEmail(emailContent.getSubject(), emailIDs, emailContent.getParticipants(),
+                    emailContent.getSummaryPoints(), emailContent.getActionItems());
+
     }
 
     public List<String> getSummaryPoints() {

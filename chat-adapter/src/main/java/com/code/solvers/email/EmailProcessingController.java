@@ -32,13 +32,11 @@ public class EmailProcessingController {
     private Map<String, String> USER_EMAIL_ID_STORE;
 
     @RequestMapping(value = "/sendEmail", method = RequestMethod.POST)
-    private String sendEmail(String subject, String toEmail, String userId) {
+    private String sendEmail(String subject, String toEmail) {
         try {
-            subject = "TEST";
-            toEmail = "anooj.chavda@gmail.com";
-            userId = "anooj";
 
-            emailProcessingService.sendEmail(subject, toEmail, userId);
+            emailProcessingService.sendEmail(subject, new String[]{toEmail}, emailProcessingService.getParticipants(),
+                    emailProcessingService.getSummaryPoints(), emailProcessingService.getActionItems());
 
             return "Email sent successfully";
         } catch(Exception e) {
