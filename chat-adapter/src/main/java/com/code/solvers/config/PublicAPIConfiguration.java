@@ -17,21 +17,7 @@ import com.code.solvers.model.AllUrls;
 @Configuration
 public class PublicAPIConfiguration {
 	
-	@Value("${spring.mail.host}")
-	private String host;
-	
-	@Value("${spring.mail.username}")
-	private String userName;
-	
-	@Value("${spring.mail.password}")
-	private String password;
-	
-	@Value("${spring.mail.protocol}")
-	private String protocol;
-	
-	@Value("${spring.mail.port}")
-	private String port;
-	
+
 	@LoadBalanced
     @Bean
     RestTemplate restTemplate() {
@@ -40,27 +26,5 @@ public class PublicAPIConfiguration {
 				.setReadTimeout(Duration.ofMillis(AllUrls.TIMEOUT_IN_MILLISECOND)).build();
     }
 	
-	@Bean
-    public JavaMailSender mailSender() {
 
-        final JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
-
-        // Basic mail sender configuration, based on emailconfig.properties
-        mailSender.setHost(host);
-        mailSender.setPort(587);
-        mailSender.setProtocol(protocol);
-        mailSender.setUsername(userName);
-        mailSender.setPassword(password);
-        
-        final Properties props = new Properties();
-        props.put("mail.transport.protocol", "smtp");
-        props.put("mail.smtp.ssl.trust", "smtp-mail.outlook.com");
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.debug", "true");
-        mailSender.setJavaMailProperties(props);
-
-        return mailSender;
-
-    }
 }
