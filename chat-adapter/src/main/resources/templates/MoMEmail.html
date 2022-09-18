@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <p>Hi All,</p>
+
+    <p>Thank you for joining the meeting. Please find the MoM below.</p>
+
+    <p><strong>Participants </strong>: <span th:text="${participants}"></span></p>
+
+    <p><strong>Summary </strong>:</p>
+
+    <ul>
+        <li th:each="summaryPoint : ${summaryPoints}" th:text="${summaryPoint}">
+        </li>
+    </ul>
+
+    <p><strong>Action Items</strong> :</p>
+
+    <ul>
+        <li th:each="actionItem : ${actionItems}" th:text="${actionItem}">
+        </li>
+    </ul>
+
+    <p>Thanks.</p>
+</body>
+</html>

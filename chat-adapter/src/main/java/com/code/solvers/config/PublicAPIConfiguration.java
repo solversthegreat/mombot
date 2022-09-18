@@ -17,19 +17,19 @@ import com.code.solvers.model.AllUrls;
 @Configuration
 public class PublicAPIConfiguration {
 	
-	@Value("spring.mail.host")
+	@Value("${spring.mail.host}")
 	private String host;
 	
-	@Value("spring.mail.username")
+	@Value("${spring.mail.username}")
 	private String userName;
 	
-	@Value("spring.mail.password")
+	@Value("${spring.mail.password}")
 	private String password;
 	
-	@Value("spring.mail.protocol")
+	@Value("${spring.mail.protocol}")
 	private String protocol;
 	
-	@Value("spring.mail.port")
+	@Value("${spring.mail.port}")
 	private String port;
 	
 	@LoadBalanced
@@ -54,7 +54,7 @@ public class PublicAPIConfiguration {
         
         final Properties props = new Properties();
         props.put("mail.transport.protocol", "smtp");
-        props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
+        props.put("mail.smtp.ssl.trust", "smtp-mail.outlook.com");
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.debug", "true");

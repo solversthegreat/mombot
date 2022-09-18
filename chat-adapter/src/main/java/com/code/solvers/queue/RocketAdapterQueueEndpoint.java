@@ -428,32 +428,7 @@ public class RocketAdapterQueueEndpoint {
 		}
 		
 	}
-	
-	private String send(String subject, String toEmail, String templateName, String userId) {
-		
-		try {
-			MimeMessage mail = mailSender.createMimeMessage();	
-            MimeMessageHelper messageHelper = new MimeMessageHelper(mail, true);
-	        messageHelper.setFrom("Credit Suisse Team<solversthegreat@gmail.com>");
-	        messageHelper.setTo(toEmail);
-	        messageHelper.setSubject(subject);
-	        Context context = new Context();
-	        // need to populate context for replacing placeholder with value in template
-	        messageHelper.setText(emailBuilder.build(templateName, context), true);
-		    mailSender.send(mail);
-		    
-		    if(userId != null) {
-		    	USER_EMAIL_ID_STORE.put(userId, toEmail);
-		    }
-		    return "Email sent successfully";
-		    
-		} catch(Exception e) {
-			logger.error("Error sending email :"+e);
-		}
-		
-		return "Sorry. Couldn't send the email right now. I will try again back after sometime.";
-	}
-	
+
 	private HttpEntity<JiraResponseMessage> createJira(String title, String desc) {
 		JiraRequestMessage jiraMessage = new JiraRequestMessage();
 		

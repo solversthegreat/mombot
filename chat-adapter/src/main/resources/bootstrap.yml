@@ -3,15 +3,15 @@ spring:
     name: rocket-chat
   mail:
     default-encoding: 
-    host: smtp.gmail.com
-    username: solversthegreat@gmail.com
+    host: smtp-mail.outlook.com
+    username: solvers2022@outlook.com
     password: hack@2022
     port: 587
     properties:
       mail:
         smtp:
           ssl:
-            trust: "smtp.gmail.com"
+            trust: "smtp-mail.outlook.com"
           auth: true
           starttls:
             enable: true
