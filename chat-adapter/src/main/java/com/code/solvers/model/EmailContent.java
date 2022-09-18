@@ -4,7 +4,7 @@ import java.util.List;
 
 public class EmailContent {
 
-    private String subject = "MoM - dailystandup";
+    private String subject = "MoM";
 
     private String participants;
 

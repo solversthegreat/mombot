@@ -8,6 +8,7 @@ import com.code.solvers.email.EmailProcessingService;
 import com.code.solvers.model.*;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -45,7 +46,13 @@ public class RocketAdapterQueueEndpoint {
 	
 	@Autowired
 	private RocketAdapter adapter;
-	
+
+	@Value("${nlp.summary.endpoint}")
+	private String nlpSummaryEndpoint;
+
+	@Value("${nlp.dataprocessor.endpoint}")
+	private String nlpDataProcessorEndpoint;
+
 	@Autowired
 	private RestTemplate restTemplate;
 
@@ -339,7 +346,7 @@ public class RocketAdapterQueueEndpoint {
 			params.put("input", content);
 			
 			ResponseEntity<String[]> response = template.exchange(
-					AllUrls.NLP_SUMMARY_ENDPOINT, 
+					nlpSummaryEndpoint,
 					HttpMethod.POST, 
 					request,
 					String[].class,
@@ -364,7 +371,7 @@ public class RocketAdapterQueueEndpoint {
 			HttpEntity<String> request = new HttpEntity<>(content, headers);
 
 			response = template.exchange(
-					AllUrls.NLP_DATAPROCESSOR_ENDPOINT,
+					nlpDataProcessorEndpoint,
 					HttpMethod.POST,
 					request,
 					responseType);
