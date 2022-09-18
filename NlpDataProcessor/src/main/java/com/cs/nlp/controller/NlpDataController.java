@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,7 +22,7 @@ public class NlpDataController {
     CoreNlpEvaluator coreNlpEvaluator;
 
     @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE,value = "/getActionItem",method = RequestMethod.POST)
-    public ActionItem getActionItemForChatContent(@RequestBody String text){
+    public Map<String,String> getActionItemForChatContent(@RequestBody String text){
         return coreNlpEvaluator.getActionItems(text);
     }
 
