@@ -8,7 +8,7 @@ public class AllUrls {
 	public static final String ROCKET_POST_MESSAGE_ENDPOINT = "https://hack2022.rocket.chat/api/v1/chat.postMessage";
 	public static final String ROCKET_CREATE_GROUP_ENDPOINT = "http://hack2022.rocket.chat/api/v1/groups.create";
 	public static final String ROCKET_CHAT_REACT_ENDPOINT = "https://hack2022.rocket.chat/api/v1/chat.react";
-	public static final String ROCKET_CHAT_PARTICIPANTS_ENDPOINT = "https://hack2022.rocket.chat/api/v1/channels.members?roomName={room}";
+	public static final String ROCKET_CHAT_PARTICIPANTS_ENDPOINT = "https://hack2022.rocket.chat/api/v1/users.list?roomName={room}";
 	public static final String ROCKET_CHAT_HISOTRY_ENDPOINT = "https://hack2022.rocket.chat/api/v1/channels.history?roomName={room}";
 	public static final String ROCKET_GROUP_MESSAGES_ENDPOINT = "https://hack2022.rocket.chat/api/v1/groups.messages?roomName={room}";
 	public static final String DIALOGFLOW_QUERY_ENDPOINT = "https://api.dialogflow.com/v1/query?v=20170712";

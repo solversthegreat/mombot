@@ -1,8 +1,14 @@
 package com.code.solvers.queue;
 
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.mail.internet.MimeMessage;
 
@@ -26,6 +32,7 @@ import org.thymeleaf.context.Context;
 
 
 import com.code.solvers.nlp.model.Response;
+import com.code.solvers.builder.NLPInputRequestBuilder;
 import com.code.solvers.jira.model.Assignee;
 import com.code.solvers.jira.model.Fields;
 import com.code.solvers.jira.model.Issuetype;
@@ -37,9 +44,13 @@ import com.code.solvers.model.BotServerIncomingMessage;
 import com.code.solvers.model.BotServerOutgoingMessage;
 import com.code.solvers.model.Channel;
 import com.code.solvers.model.ChannelHistory;
+import com.code.solvers.model.Email;
+import com.code.solvers.model.Group;
 import com.code.solvers.model.GroupMessages;
+import com.code.solvers.model.Message;
 import com.code.solvers.model.RocketChatPostMessage;
 import com.code.solvers.model.RocketChatReact;
+import com.code.solvers.model.User;
 import com.code.solvers.model.rocket.RocketIncomingMessage;
 import com.code.solvers.starter.RocketAdapter;
 
@@ -63,10 +74,14 @@ public class RocketAdapterQueueEndpoint {
 	@Autowired
 	private JavaMailSender mailSender;
 	
+	@Autowired
+	private NLPInputRequestBuilder nlpRequestBuilder;
+	
 	private RestTemplate template;
 	
 	private Map<String, String> USER_EMAIL_ID_STORE;
 	private Map<String, RocketIncomingMessage> INC_TO_ROCKETMSG_STORE;
+	private Map<String, List<Email>> USER_EMAIL_IDS_STORE;
 	
 	public RocketAdapterQueueEndpoint(RestTemplateBuilder rtb) {
 		template = rtb.setConnectTimeout(Duration.ofMillis(AllUrls.TIMEOUT_IN_MILLISECOND))
@@ -74,6 +89,7 @@ public class RocketAdapterQueueEndpoint {
 						.build();
 		USER_EMAIL_ID_STORE = new HashMap<String, String>();
 		INC_TO_ROCKETMSG_STORE = new HashMap<String, RocketIncomingMessage>();
+		USER_EMAIL_IDS_STORE = new HashMap<>();
 	}
 	
 	@RequestMapping("/rocket/adapter/incoming/push")
@@ -111,7 +127,9 @@ public class RocketAdapterQueueEndpoint {
 			reactMsg.setShouldReact(true);
 			
 			reactToChat(reactMsg);*/
-			ResponseEntity<String> response = getSummary("");
+			String summaryInputContent = getAndPrepareGroupMessages();
+			ResponseEntity<String> response = getSummary(summaryInputContent);
+			populateUserEmailIds();
 			return postMessageToChat(response.getBody(), message);
 			
 		} catch (Exception e) {
@@ -152,25 +170,26 @@ public class RocketAdapterQueueEndpoint {
 	}
 	
 	@RequestMapping(value = "/rocket/adapter/participants", method = RequestMethod.GET)
-	public ResponseEntity<Channel> getParticipants() {
+	public ResponseEntity<Group> getParticipants() {
 		logger.info("Request received to get the participants.");
-		ResponseEntity<Channel> response = null;
+		ResponseEntity<Group> response = null;
 		try {
 			HttpHeaders headers = getHeaders();
 			HttpEntity<Void> request = new HttpEntity<>(headers);
 			Map<String, String> params = new HashMap<>();
 			params.put("room", "dailystandup");
 			
-			response = restTemplate.exchange(
+			response = template.exchange(
 					AllUrls.ROCKET_CHAT_PARTICIPANTS_ENDPOINT, 
 					HttpMethod.GET, 
 					request, 
-					Channel.class,
+					Group.class,
 					params);
 			
 		} catch(Exception e) {
 			logger.error("Error while getting the participants.");
 		}
+		
 		return response;
 	}
 	
@@ -269,6 +288,26 @@ public class RocketAdapterQueueEndpoint {
 		return new ResponseEntity<String>(HttpStatus.OK);
 	}
 	
+	private String getAndPrepareGroupMessages() {
+		String result = "";
+		
+		ResponseEntity<ChannelHistory> response = getChannelHistory();
+		if (response != null && response.getStatusCode().equals(HttpStatus.OK)) {
+			ChannelHistory channelMessages = response.getBody();
+			if (channelMessages.isSuccess()) {
+				List<Message> messages = channelMessages.getMessages();
+				List<Message> filteredMessages = messages.stream()
+				.filter(message -> !message.getU().get_id().equalsIgnoreCase("initialuser"))
+				.sorted(Comparator.comparing(Message::getTs))
+				.collect(Collectors.toList());
+				
+				result = nlpRequestBuilder.buildSummaryRequest(filteredMessages);
+			}
+		}
+		
+		return result;
+	}
+	
 	private ResponseEntity<String> getSummary(String content) {
 		logger.info("Requesting NLP engine to get the summary.");
 		try {
@@ -276,13 +315,16 @@ public class RocketAdapterQueueEndpoint {
 			HttpEntity<RocketChatPostMessage> request = new HttpEntity<>(headers);
 			Map<String, String> params = new HashMap<>();
 			
-			content = "Jules: Hey kids! How you boys doin’?\r\n"
-					+ "Jules: (Speaking to the guy laying on the couch) Hey, keep chillin’. You know who we are? We’re associates of your business partner Marsellus Wallace. You do remember your business partner don’t you? Let me take a wild guess here. You’re Brett, right?\r\n"
-					+ "Brett: Yeah.\r\n"
-					+ "Jules: I thought so. You remember your business partner Marsellus Wallace, don’t you, Brett?\r\n"
-					+ "Brett: Yeah, yeah, I remember him.\r\n"
-					+ "Jules: Good. Looks like me an Vincent caught you boys at breakfast. Sorry about that. Whatcha havin’?\r\n"
-					+ "Brett: Hamburgers.";
+			/*
+			 * content = "Jules: Hey kids! How you boys doin’?\r\n" +
+			 * "Jules: (Speaking to the guy laying on the couch) Hey, keep chillin’. You know who we are? We’re associates of your business partner Marsellus Wallace. You do remember your business partner don’t you? Let me take a wild guess here. You’re Brett, right?\r\n"
+			 * + "Brett: Yeah.\r\n" +
+			 * "Jules: I thought so. You remember your business partner Marsellus Wallace, don’t you, Brett?\r\n"
+			 * + "Brett: Yeah, yeah, I remember him.\r\n" +
+			 * "Jules: Good. Looks like me an Vincent caught you boys at breakfast. Sorry about that. Whatcha havin’?\r\n"
+			 * + "Brett: Hamburgers.";
+			 */
+			
 			params.put("input", content);
 			
 			ResponseEntity<String> response = template.exchange(
@@ -298,7 +340,22 @@ public class RocketAdapterQueueEndpoint {
 			logger.error("Error processing NLP engine to get the summary", e);
 		}
 		
-		return new ResponseEntity<String>(HttpStatus.OK);
+		return new ResponseEntity<String>("Couldn't send the MOM Summary.", HttpStatus.OK);
+	}
+	
+	private void populateUserEmailIds() {
+		
+		ResponseEntity<Group> response = getParticipants();
+		if (response != null && response.getStatusCode().equals(HttpStatus.OK)) {
+			Group group = response.getBody();
+			
+			if (group.isSuccess()) {
+				List<User> users = group.getUsers();
+				USER_EMAIL_IDS_STORE = users.stream()
+						.filter(user -> user.getType().equalsIgnoreCase("user"))
+						.collect(Collectors.toMap(User::getUsername, b -> b.getEmails()));
+			}
+		}
 	}
 	
 	private HttpEntity<RocketChatPostMessage> getRequest(BotServerOutgoingMessage message){

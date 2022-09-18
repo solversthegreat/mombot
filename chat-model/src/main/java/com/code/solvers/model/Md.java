@@ -7,7 +7,7 @@ public class Md implements Serializable {
 	
 	private static final long serialVersionUID = 9169807755673517733L;
 	public String type;
-    public ArrayList<Value> value;
+    public Object value;
     
 	public String getType() {
 		return type;
@@ -15,10 +15,10 @@ public class Md implements Serializable {
 	public void setType(String type) {
 		this.type = type;
 	}
-	public ArrayList<Value> getValue() {
+	public Object getValue() {
 		return value;
 	}
-	public void setValue(ArrayList<Value> value) {
+	public void setValue(Object value) {
 		this.value = value;
 	}
     

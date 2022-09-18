@@ -1,6 +1,7 @@
 package com.code.solvers.starter;
 
 import java.time.Duration;
+import java.util.Base64;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +52,13 @@ public class JiraConnector {
 	private HttpHeaders getHeaders() {
 
 		HttpHeaders headers = new HttpHeaders();
-		headers.add("Authorization", "Bearer " + getToken());
+		//headers.add("Authorization", "Bearer " + getToken());
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		
+		String authString = "solversthegreat@gmail.com:" + getToken();
+		String auth = Base64.getEncoder().encodeToString(authString.getBytes());
+		
+		headers.add("Authorization", "Basic " + auth);
 		headers.setContentType(MediaType.APPLICATION_JSON);
 
 		return headers;
